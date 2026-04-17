@@ -9,143 +9,145 @@ class NumberGuessingAI:
             "games_played": 0,
             "wins": 0,
             "total_attempts": 0,
-            "best_attempts": float("inf")
+            "best_attempts": float("inf"),
+            "history": []
         }
 
-    # ---------------- UI / UX ----------------
-    def slow_print(self, text, delay=0.02):
+    # ---------------- UI ----------------
+    def slow_print(self, text, delay=0.015):
         for ch in text:
-            print(ch, end='', flush=True)
+            print(ch, end="", flush=True)
             time.sleep(delay)
         print()
 
-    def ai_thought(self):
-        messages = [
-            "Analyzing patterns...",
-            "Running probability model...",
-            "Updating predictions...",
-            "Narrowing search space...",
-            "Hmm... interesting choice...",
-            "Processing logic tree...",
-        ]
-        return random.choice(messages)
+    def ai_message(self):
+        return random.choice([
+            "Processing probability space...",
+            "Eliminating impossible ranges...",
+            "Simulating optimal guess...",
+            "Recalculating best move...",
+            "Thinking like a human... but faster.",
+        ])
 
-    # ---------------- GAME SETTINGS ----------------
-    def choose_difficulty(self):
-        print("\n🎮 Choose Difficulty Level")
-        print("1. Easy   (1 - 50)")
-        print("2. Medium (1 - 100)")
-        print("3. Hard   (1 - 500)")
-
+    # ---------------- INPUT SAFE ----------------
+    def safe_input(self, prompt, valid=None):
         while True:
-            choice = input("👉 Enter choice: ").strip()
-            if choice == "1":
-                return 50
-            elif choice == "2":
-                return 100
-            elif choice == "3":
-                return 500
-            print("❌ Invalid input. Try again.")
+            value = input(prompt).strip().lower()
+            if valid is None or value in valid:
+                return value
+            print("Invalid input. Try again.")
 
-    # ---------------- PERFORMANCE SYSTEM ----------------
+    # ---------------- DIFFICULTY ----------------
+    def difficulty(self):
+        print("\nChoose Difficulty:")
+        print("1. Easy (1–50)")
+        print("2. Medium (1–100)")
+        print("3. Hard (1–500)")
+
+        choice = self.safe_input("Enter choice: ", ["1", "2", "3"])
+        return {"1": 50, "2": 100, "3": 500}[choice]
+
+    # ---------------- RATING ----------------
     def rating(self, attempts, max_range):
-        optimal = {
-            50: (5, 6),
-            100: (6, 7),
-            500: (8, 9)
-        }
+        optimal = {50: 5, 100: 7, 500: 9}
+        threshold = optimal[max_range]
 
-        genius, efficient = optimal[max_range]
+        if attempts <= threshold:
+            return "GENIUS"
+        elif attempts <= threshold + 1:
+            return "EFFICIENT"
+        return "AVERAGE"
 
-        if attempts <= genius:
-            return "🏆 GENIUS AI PERFORMANCE"
-        elif attempts <= efficient:
-            return "⚡ EFFICIENT GUESSING"
-        return "📉 BELOW EXPECTATION"
-
-    # ---------------- CORE GAME ----------------
+    # ---------------- GAME ----------------
     def play(self):
-        self.slow_print("\n🤖 Hello! I'm your Guessing AI Agent.")
-        max_range = self.choose_difficulty()
+        self.slow_print("\nAI Agent Starting...")
 
-        self.slow_print(f"\nThink of a number between 1 and {max_range}.")
+        max_range = self.difficulty()
+
+        self.slow_print(f"\nThink of a number between 1 and {max_range}")
         input("Press ENTER when ready...")
 
         low, high = 1, max_range
         attempts = 0
-
-        start_time = time.time()
+        start = time.time()
 
         while low <= high:
             attempts += 1
             guess = (low + high) // 2
 
-            print("\n----------------------------")
-            print(f"📊 Range: {low} - {high}")
-            self.slow_print(f"🧠 {self.ai_thought()}")
-            time.sleep(0.5)
+            print(f"\nRange: {low}-{high}")
+            print(self.ai_message())
+            print(f"AI Guess: {guess}")
 
-            print(f"🤖 My guess: {guess}")
-
-            while True:
-                feedback = input("Is it 'low', 'high', or 'correct'? ").strip().lower()
-                if feedback in ["low", "high", "correct"]:
-                    break
-                print("❌ Please enter valid input.")
+            feedback = self.safe_input(
+                "low / high / correct: ",
+                ["low", "high", "correct"]
+            )
 
             if feedback == "correct":
-                duration = round(time.time() - start_time, 2)
+                duration = round(time.time() - start, 2)
+                score = self.rating(attempts, max_range)
 
-                self.slow_print(f"\n🎉 I found it in {attempts} attempts!")
-                self.slow_print(f"⏱️ Time taken: {duration} seconds")
-                print(self.rating(attempts, max_range))
+                self.slow_print(f"\nFound in {attempts} attempts")
+                self.slow_print(f"Time: {duration}s")
+                self.slow_print(f"Rating: {score}")
 
-                self.update_stats(attempts)
+                self.update_stats(attempts, max_range, duration, score)
                 return
 
             elif feedback == "low":
                 low = guess + 1
-            elif feedback == "high":
+            else:
                 high = guess - 1
 
-        self.slow_print("\n🚨 Inconsistent answers detected!")
-        self.slow_print("Either you're messing with me or something went wrong 😄")
+        self.slow_print("\nInconsistent answers detected!")
 
     # ---------------- STATS ----------------
-    def update_stats(self, attempts):
+    def update_stats(self, attempts, max_range, duration, score):
         self.stats["games_played"] += 1
         self.stats["wins"] += 1
         self.stats["total_attempts"] += attempts
 
-        if attempts < self.stats["best_attempts"]:
-            self.stats["best_attempts"] = attempts
+        self.stats["best_attempts"] = min(self.stats["best_attempts"], attempts)
+
+        self.stats["history"].append({
+            "time": str(datetime.now()),
+            "range": max_range,
+            "attempts": attempts,
+            "duration": duration,
+            "rating": score
+        })
 
     def show_stats(self):
-        print("\n📊 GAME STATISTICS")
-        print("----------------------")
-        print(f"Games Played : {self.stats['games_played']}")
-        print(f"Wins         : {self.stats['wins']}")
-        print(f"Total Attempts: {self.stats['total_attempts']}")
+        print("\n--- STATS ---")
+        print(f"Games Played: {self.stats['games_played']}")
+        print(f"Wins: {self.stats['wins']}")
 
-        if self.stats["games_played"] > 0:
+        if self.stats["games_played"]:
             avg = self.stats["total_attempts"] / self.stats["games_played"]
             print(f"Average Attempts: {round(avg, 2)}")
 
         if self.stats["best_attempts"] != float("inf"):
-            print(f"Best Performance: {self.stats['best_attempts']} attempts")
+            print(f"Best: {self.stats['best_attempts']} attempts")
+
+        print("\nLast Game History:")
+        for h in self.stats["history"][-3:]:
+            print(h)
 
     # ---------------- MAIN LOOP ----------------
     def run(self):
-        self.slow_print("🤖 AI NUMBER GUESSING SYSTEM STARTED")
+        self.slow_print("AI Number Guessing System Online")
 
         while True:
             self.play()
 
-            print("\n==============================")
-            choice = input("Play again? (yes/no/stats): ").strip().lower()
+            choice = self.safe_input(
+                "\nPlay again? (yes/no/stats): ",
+                ["yes", "no", "stats"]
+            )
 
             if choice == "no":
-                self.slow_print("👋 Goodbye! Thanks for playing.")
+                self.slow_print("Goodbye!")
                 self.show_stats()
                 break
             elif choice == "stats":
@@ -153,5 +155,4 @@ class NumberGuessingAI:
 
 
 if __name__ == "__main__":
-    game = NumberGuessingAI()
-    game.run()
+    NumberGuessingAI().run()

@@ -35,6 +35,7 @@ class NumberGuessingAI:
             "Thinking like a human... but faster.",
         ])
 
+# Input validation loop
     def safe_input(self, prompt, valid=None):
         while True:
             value = input(prompt).strip().lower()

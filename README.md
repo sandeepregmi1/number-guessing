@@ -9,5 +9,11 @@ A simple Python game where an AI tries to guess the number you are thinking of u
 - Performance rating system
 - Simple AI-style messages
 
+## Future Improvements
+- Add GUI version
+- Add difficulty auto-adjustment
+- Store stats in file (persistent storage)
+
 ## How to Run
 python main.py
+

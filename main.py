@@ -1,6 +1,7 @@
 import time
 import random
 from datetime import datetime
+import json
 
 
 class NumberGuessingAI:
@@ -9,11 +10,16 @@ class NumberGuessingAI:
             "games_played": 0,
             "wins": 0,
             "total_attempts": 0,
-            "best_attempts": float("inf"),
+            "best_attempts": None,
             "history": []
         }
 
-    # ---------------- UI ----------------
+        try:
+            with open("stats.json", "r") as f:
+                self.stats = json.load(f)
+        except FileNotFoundError:
+            pass
+
     def slow_print(self, text, delay=0.015):
         for ch in text:
             print(ch, end="", flush=True)
@@ -29,7 +35,6 @@ class NumberGuessingAI:
             "Thinking like a human... but faster.",
         ])
 
-    # ---------------- INPUT SAFE ----------------
     def safe_input(self, prompt, valid=None):
         while True:
             value = input(prompt).strip().lower()
@@ -37,7 +42,6 @@ class NumberGuessingAI:
                 return value
             print("Invalid input. Try again.")
 
-    # ---------------- DIFFICULTY ----------------
     def difficulty(self):
         print("\nChoose Difficulty:")
         print("1. Easy (1–50)")
@@ -47,7 +51,6 @@ class NumberGuessingAI:
         choice = self.safe_input("Enter choice: ", ["1", "2", "3"])
         return {"1": 50, "2": 100, "3": 500}[choice]
 
-    # ---------------- RATING ----------------
     def rating(self, attempts, max_range):
         optimal = {50: 5, 100: 7, 500: 9}
         threshold = optimal[max_range]
@@ -58,7 +61,6 @@ class NumberGuessingAI:
             return "EFFICIENT"
         return "AVERAGE"
 
-    # ---------------- GAME ----------------
     def play(self):
         self.slow_print("\nAI Agent Starting...")
 
@@ -102,13 +104,15 @@ class NumberGuessingAI:
 
         self.slow_print("\nInconsistent answers detected!")
 
-    # ---------------- STATS ----------------
     def update_stats(self, attempts, max_range, duration, score):
         self.stats["games_played"] += 1
         self.stats["wins"] += 1
         self.stats["total_attempts"] += attempts
 
-        self.stats["best_attempts"] = min(self.stats["best_attempts"], attempts)
+        if self.stats["best_attempts"] is None:
+            self.stats["best_attempts"] = attempts
+        else:
+            self.stats["best_attempts"] = min(self.stats["best_attempts"], attempts)
 
         self.stats["history"].append({
             "time": str(datetime.now()),
@@ -117,6 +121,8 @@ class NumberGuessingAI:
             "duration": duration,
             "rating": score
         })
+
+        self.save_stats()
 
     def show_stats(self):
         print("\n--- STATS ---")
@@ -127,14 +133,17 @@ class NumberGuessingAI:
             avg = self.stats["total_attempts"] / self.stats["games_played"]
             print(f"Average Attempts: {round(avg, 2)}")
 
-        if self.stats["best_attempts"] != float("inf"):
+        if self.stats["best_attempts"] is not None:
             print(f"Best: {self.stats['best_attempts']} attempts")
 
         print("\nLast Game History:")
         for h in self.stats["history"][-3:]:
             print(h)
 
-    # ---------------- MAIN LOOP ----------------
+    def save_stats(self):
+        with open("stats.json", "w") as f:
+            json.dump(self.stats, f, indent=4)
+
     def run(self):
         self.slow_print("AI Number Guessing System Online")
 
